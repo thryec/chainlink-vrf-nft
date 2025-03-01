@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -132,10 +132,6 @@ contract SPNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
     function setRevealedCollectionAddress(
         address _revealedCollectionAddress
     ) external onlyOwner {
-        require(
-            revealType == RevealType.SeparateCollection,
-            "Reveal type is not separate collection"
-        );
         revealedCollectionAddress = _revealedCollectionAddress;
         emit RevealedCollectionSet(_revealedCollectionAddress);
     }
@@ -286,7 +282,7 @@ contract SPNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
 
         // If token is not revealed yet, return unrevealed metadata
         if (tokenIdToRandomness[tokenId] == 0) {
-            return _generateUnrevealedMetadata(tokenId);
+            return generateUnrevealedMetadata(tokenId);
         }
 
         // If using in-collection approach or token not yet burned
@@ -305,9 +301,9 @@ contract SPNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
      * @param tokenId The ID of the token
      * @return The URI for the unrevealed token metadata
      */
-    function _generateUnrevealedMetadata(
+    function generateUnrevealedMetadata(
         uint256 tokenId
-    ) internal view returns (string memory) {
+    ) public pure returns (string memory) {
         string memory name = string(
             abi.encodePacked("Mystery SP NFT #", tokenId.toString())
         );

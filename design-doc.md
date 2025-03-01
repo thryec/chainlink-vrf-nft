@@ -207,6 +207,8 @@ The system is designed to be extensible in several ways:
 
 
 ## Repository Layout  
+
+```
 project-root/
 ├── src/
 │   ├── SPNFT.sol                      # Base SP NFT contract with two revealing approaches
@@ -238,3 +240,4 @@ project-root/
 ├── README.md                         # Project documentation
 ├── deploy.sh                         # Deployment script
 └── .gitignore                        # Git ignore file
+```

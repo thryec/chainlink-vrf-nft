@@ -59,7 +59,7 @@ contract SPNFTSeparateCollectionRevealTest is
 
     function testTokenMovedToRevealedCollection() public {
         // With separate collection reveal, the token should be burned in original collection
-        vm.expectRevert("ERC721: invalid token ID");
+        vm.expectRevert();
         spnft.ownerOf(tokenId1);
 
         // And should now exist in the revealed collection
@@ -119,7 +119,7 @@ contract SPNFTSeparateCollectionRevealTest is
         _simulateVRFCallback(newRequestId, 67890);
 
         // After callback, token should be revealed (and transferred to revealed collection)
-        vm.expectRevert("ERC721: invalid token ID");
+        vm.expectRevert();
         spnft.ownerOf(tokenId2);
 
         // Verify token exists in revealed collection

@@ -61,7 +61,7 @@ contract SPNFTInCollectionRevealTest is SPNFTInCollectionRevealState {
         // Token1 should now show revealed metadata
         string memory uri = spnft.tokenURI(tokenId1);
 
-        console.log("new uri:", uri);
+        // console.log("new uri:", uri);
         string memory expectedURI = spnft.generateRevealedMetadata(tokenId1);
 
         assertEq(uri, expectedURI);

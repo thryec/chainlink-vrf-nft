@@ -104,17 +104,6 @@ contract SPNFTDeployedTest is SPNFTDeployedState {
         vm.stopPrank();
     }
 
-    function testTokenURIReturnsMysteryBox() public {
-        _dealTokens(user1, mintPrice);
-
-        vm.startPrank(user1);
-        uint256 tokenId = spnft.mint{value: mintPrice}();
-        string memory tokenURI = spnft.tokenURI(tokenId);
-        string memory expectedURI = spnft.generateUnrevealedMetadata(tokenId);
-        assertEq(tokenURI, expectedURI);
-        vm.stopPrank();
-    }
-
     function testMintRevertsWithInsufficientPayment() public {
         _dealTokens(user1, mintPrice / 2);
 

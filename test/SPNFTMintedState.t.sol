@@ -36,16 +36,15 @@ contract SPNFTMintedTest is SPNFTMintedState {
     function testUnrevealedTokenURI() public {
         string memory uri = spnft.tokenURI(tokenId1);
 
-        // Check that the URI contains "Mystery Box"
-        // This verifies we're getting the unrevealed metadata
-        assertContains(uri, "Mystery Box");
+        string memory expectedURI = spnft.generateUnrevealedMetadata(tokenId1);
+
+        assertEq(uri, expectedURI);
     }
 
     function testRevealNotEnabledYet() public {
         assertEq(spnft.revealEnabled(), false);
 
         vm.startPrank(user1);
-
         vm.expectRevert("Revealing is not enabled");
         spnft.requestReveal(tokenId1);
 
@@ -57,28 +56,5 @@ contract SPNFTMintedTest is SPNFTMintedState {
         assertEq(spnft.ownerOf(tokenId2), user1);
         assertEq(spnft.balanceOf(user1), 2);
         assertEq(spnft.balanceOf(user2), 1);
-    }
-
-    // Helper function to check if a string contains a substring
-    function assertContains(string memory str, string memory subStr) internal {
-        bytes memory strBytes = bytes(str);
-        bytes memory subStrBytes = bytes(subStr);
-
-        bool found = false;
-        for (uint i = 0; i <= strBytes.length - subStrBytes.length; i++) {
-            bool check = true;
-            for (uint j = 0; j < subStrBytes.length; j++) {
-                if (strBytes[i + j] != subStrBytes[j]) {
-                    check = false;
-                    break;
-                }
-            }
-            if (check) {
-                found = true;
-                break;
-            }
-        }
-
-        assertTrue(found, "String does not contain expected substring");
     }
 }

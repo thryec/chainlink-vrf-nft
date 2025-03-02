@@ -1,77 +1,128 @@
-// // SPDX-License-Identifier: MIT
-// pragma solidity ^0.8.19;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
 
-// import "./SPNFTRevealEnabledState.t.sol";
+import "./SPNFTRevealEnabledState.t.sol";
 
-// /**
-//  * @title SPNFTSeparateCollectionRevealState
-//  * @dev State with separate collection reveal type set and one token revealed
-//  */
-// abstract contract SPNFTSeparateCollectionRevealState is
-//     SPNFTRevealEnabledState
-// {
-//     uint256 internal requestId;
+/**
+ * @title SPNFTSeparateCollectionRevealState
+ * @dev State with separate collection reveal type set and one token revealed
+ */
+abstract contract SPNFTSeparateCollectionRevealState is
+    SPNFTRevealEnabledState
+{
+    uint256 internal requestId;
 
-//     function setUp() public virtual override {
-//         super.setUp();
+    function setUp() public virtual override {
+        super.setUp();
 
-//         // Set reveal type to separate collection
-//         vm.prank(deployer);
-//         spnft.setRevealType(SPNFT.RevealType.SeparateCollection);
+        // Set reveal type to separate collection
+        vm.startPrank(deployer);
+        spnft.setRevealEnabled(false);
+        spnft.setRevealType(SPNFT.RevealType.SeparateCollection);
+        spnft.setRevealEnabled(true);
+        vm.stopPrank();
 
-//         // Request reveal for token1
-//         requestId = 123;
+        // Request reveal for token1
+        requestId = 123;
 
-//         // Mock the VRF call
-//         vm.mockCall(
-//             mockVrfCoordinator,
-//             abi.encodeWithSelector(
-//                 VRFCoordinatorV2Interface.requestRandomWords.selector
-//             ),
-//             abi.encode(requestId)
-//         );
+        // Mock the VRF call
+        vm.mockCall(
+            mockVrfCoordinator,
+            abi.encodeWithSelector(
+                VRFCoordinatorV2Interface.requestRandomWords.selector
+            ),
+            abi.encode(requestId)
+        );
 
-//         vm.prank(user1);
-//         spnft.requestReveal(tokenId1);
+        vm.prank(user1);
+        spnft.requestReveal(tokenId1);
 
-//         // Simulating the effects of fulfillRandomWords
-//         // In a real test, you'd need a proper way to call the internal function
-//         _simulateFulfillRandomWords(requestId, 12345);
-//     }
+        // Simulate the VRF callback
+        uint256[] memory randomWords = new uint256[](1);
+        randomWords[0] = 12345;
 
-//     // Helper function to simulate the effects of fulfillRandomWords
-//     function _simulateFulfillRandomWords(
-//         uint256 _requestId,
-//         uint256 randomValue
-//     ) internal virtual {
-//         // In a real test, you'd implement this differently
-//         // For example, you might use a test contract that exposes the internal function
+        // Use the helper function to simulate VRF callback
+        _simulateVRFCallback(requestId, 12345);
+    }
+}
 
-//         // This is just to show the concept
-//         console.log(
-//             "Simulating fulfillRandomWords for requestId: %s with random value: %s",
-//             _requestId,
-//             randomValue
-//         );
-//     }
-// }
+/**
+ * @title SPNFTSeparateCollectionRevealTest
+ * @dev Test contract for separate collection reveal
+ */
+contract SPNFTSeparateCollectionRevealTest is
+    SPNFTSeparateCollectionRevealState
+{
+    function testRevealedCollectionAddressSet() public {
+        assertEq(spnft.revealedCollectionAddress(), address(revealedSpnft));
+    }
 
-// /**
-//  * @title SPNFTSeparateCollectionRevealTest
-//  * @dev Test contract for separate collection reveal
-//  */
-// contract SPNFTSeparateCollectionRevealTest is
-//     SPNFTSeparateCollectionRevealState
-// {
-//     // These tests are simplified since we can't easily simulate fulfillRandomWords
-//     // In a real implementation, you'd create a test-specific contract that exposes internal methods
+    function testTokenMovedToRevealedCollection() public {
+        // With separate collection reveal, the token should be burned in original collection
+        vm.expectRevert("ERC721: invalid token ID");
+        spnft.ownerOf(tokenId1);
 
-//     function testRevealedCollectionAddressSet() public {
-//         assertEq(spnft.revealedCollectionAddress(), address(revealedSpnft));
-//     }
+        // And should now exist in the revealed collection
+        assertEq(revealedSpnft.ownerOf(tokenId1), user1);
+    }
 
-//     function testUnrevealedTokenStillInOriginalCollection() public {
-//         // Token2 hasn't been revealed yet, so should still be in the original collection
-//         assertEq(spnft.ownerOf(tokenId2), user1);
-//     }
-// }
+    function testRevealedTokenURI() public {
+        // Get URI from revealed collection
+        string memory uri = revealedSpnft.tokenURI(tokenId1);
+
+        string memory expectedURI = spnft.generateRevealedMetadata(tokenId1);
+
+        assertEq(uri, expectedURI);
+    }
+
+    function testUnrevealedTokenStillInOriginalCollection() public {
+        // Token2 hasn't been revealed yet, so should still be in the original collection
+        assertEq(spnft.ownerOf(tokenId2), user1);
+
+        // And should show mystery box metadata
+        string memory uri = spnft.tokenURI(tokenId2);
+        string memory expectedURI = spnft.generateUnrevealedMetadata(tokenId2);
+
+        assertEq(uri, expectedURI);
+    }
+
+    function testTokenRevealStatus() public {
+        // Create an explicit cast to access the exposed functions
+        SPNFTWithExposedVRF spnftCast = SPNFTWithExposedVRF(address(spnft));
+
+        // Check if token2 (unrevealed) has randomness
+        assertEq(spnftCast.isRevealed(tokenId2), false);
+
+        // We can't check token1 in the original contract since it's burned
+        // But we can verify it exists in the revealed collection
+        assertTrue(revealedSpnft.ownerOf(tokenId1) == user1);
+
+        // Request reveal for token2
+        uint256 newRequestId = 456;
+
+        // Mock the VRF call
+        vm.mockCall(
+            mockVrfCoordinator,
+            abi.encodeWithSelector(
+                VRFCoordinatorV2Interface.requestRandomWords.selector
+            ),
+            abi.encode(newRequestId)
+        );
+
+        vm.prank(user1);
+        spnft.requestReveal(tokenId2);
+
+        // Check token is not revealed yet
+        assertEq(spnftCast.isRevealed(tokenId2), false);
+
+        // Simulate VRF callback
+        _simulateVRFCallback(newRequestId, 67890);
+
+        // After callback, token should be revealed (and transferred to revealed collection)
+        vm.expectRevert("ERC721: invalid token ID");
+        spnft.ownerOf(tokenId2);
+
+        // Verify token exists in revealed collection
+        assertEq(revealedSpnft.ownerOf(tokenId2), user1);
+    }
+}

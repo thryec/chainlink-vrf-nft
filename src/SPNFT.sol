@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 import "@chainlink/contracts/v0.8/vrf/VRFConsumerBaseV2.sol";
 import "@chainlink/contracts/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+import "forge-std/console.sol";
 
 /**
  * @title SPNFT
@@ -46,7 +47,7 @@ contract SPNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
     string[] private attributes;
 
     // Mapping of tokenId to randomness for metadata
-    mapping(uint256 => uint256) private tokenIdToRandomness;
+    mapping(uint256 => uint256) public tokenIdToRandomness;
 
     // Mapping of request ID to token IDs for Chainlink VRF
     mapping(uint256 => uint256[]) private requestIdToTokenIds;
@@ -113,6 +114,10 @@ contract SPNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
         return tokenId;
     }
 
+    /***********************************************/
+    /************* REVEAL FUNCTIONS ****************/
+    /***********************************************/
+
     /**
      * @dev Function to set the revealing approach type
      * Per the FAQ, the operator determines the reveal method in advance
@@ -158,6 +163,7 @@ contract SPNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
             CALLBACK_GAS_LIMIT,
             NUM_WORDS
         );
+        console.log("reveal requestId:", requestId);
 
         requestIdToTokenIds[requestId] = tokenIdsToReveal;
         revealed++;
@@ -198,6 +204,10 @@ contract SPNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
         emit RevealRequested(requestId, tokenIds);
     }
 
+    /***********************************************/
+    /*********** CHAINLINK VRF FUNCTIONS ***********/
+    /***********************************************/
+
     /**
      * @dev Callback function used by Chainlink VRF to deliver randomness
      * Per the FAQ, VRF is used during the revealing phase to randomly map metadata to token IDs
@@ -220,6 +230,11 @@ contract SPNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
                 keccak256(abi.encode(randomness, tokenId))
             );
             tokenIdToRandomness[tokenId] = tokenRandomness;
+            console.log(
+                "setting tokenIdToRandomness",
+                tokenId,
+                tokenIdToRandomness[tokenId]
+            );
 
             // If using separate collection approach, burn the token and mint a new one
             if (
@@ -244,6 +259,10 @@ contract SPNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
 
         delete requestIdToTokenIds[requestId];
     }
+
+    /***********************************************/
+    /************* METADATA FUNCTIONS **************/
+    /***********************************************/
 
     /**
      * @dev Function to set the metadata arrays
@@ -290,7 +309,7 @@ contract SPNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
             revealType == RevealType.InCollection ||
             _ownerOf(tokenId) != address(0)
         ) {
-            return _generateRevealedMetadata(tokenId);
+            return generateRevealedMetadata(tokenId);
         }
 
         revert("Token URI cannot be determined");
@@ -333,9 +352,9 @@ contract SPNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
      * @param tokenId The ID of the token
      * @return The URI for the revealed token metadata
      */
-    function _generateRevealedMetadata(
+    function generateRevealedMetadata(
         uint256 tokenId
-    ) internal view returns (string memory) {
+    ) public view returns (string memory) {
         require(names.length > 0, "Metadata not set");
 
         uint256 randomness = tokenIdToRandomness[tokenId];
@@ -393,6 +412,10 @@ contract SPNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
         );
         return string(abi.encodePacked("data:application/json;base64,", json));
     }
+
+    /***********************************************/
+    /************* OPERATOR FUNCTIONS **************/
+    /***********************************************/
 
     /**
      * @dev Function to enable or disable minting

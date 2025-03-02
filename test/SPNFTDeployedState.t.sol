@@ -9,7 +9,7 @@ import "forge-std/console.sol";
  * @dev State with SPNFT contract deployed but no tokens minted yet
  */
 abstract contract SPNFTDeployedState is StateZero {
-    SPNFT internal spnft;
+    SPNFTWithExposedVRF internal spnft;
     RevealedSPNFT internal revealedSpnft;
 
     function setUp() public virtual override {
@@ -18,7 +18,7 @@ abstract contract SPNFTDeployedState is StateZero {
         vm.startPrank(deployer);
 
         // Deploy SP NFT contract
-        spnft = new SPNFT(
+        spnft = new SPNFTWithExposedVRF(
             "SP NFT",
             "SPNFT",
             mintPrice,

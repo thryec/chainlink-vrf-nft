@@ -1,16 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "../src/SPNFT.sol";
+import "./SPNFTWithExposedVRF.sol";
 
-/**
- * @title SPNFTWithExposedVRF
- * @dev Test contract that extends SPNFT and exposes the VRF callback function
- * This allows tests to directly call the otherwise internal function
- */
-contract SPNFTWithExposedVRF is SPNFT {
-    mapping(uint256 => uint256) private tokenIdToRandomness;
-
+contract SPNFTWithVRF is SPNFT {
     constructor(
         string memory _name,
         string memory _symbol,
@@ -42,18 +35,16 @@ contract SPNFTWithExposedVRF is SPNFT {
     }
 
     /**
-     * @dev Helper function to check if a token is revealed
+     * @dev Helper to check if a token is revealed
      */
-    function isTokenRevealed(uint256 tokenId) external view returns (bool) {
+    function isRevealed(uint256 tokenId) external view returns (bool) {
         return tokenIdToRandomness[tokenId] != 0;
     }
 
     /**
-     * @dev Helper function to get the randomness value for a token
+     * @dev Helper to get the randomness value for a token
      */
-    function getTokenRandomness(
-        uint256 tokenId
-    ) external view returns (uint256) {
+    function getRandomness(uint256 tokenId) external view returns (uint256) {
         return tokenIdToRandomness[tokenId];
     }
 }

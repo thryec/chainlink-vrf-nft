@@ -51,6 +51,17 @@ contract SPNFTMintedTest is SPNFTMintedState {
         vm.stopPrank();
     }
 
+    function testOperatorSetRevealType() public {
+        vm.startPrank(deployer);
+        spnft.setRevealType(SPNFT.RevealType.InCollection);
+        vm.stopPrank();
+
+        assertEq(
+            uint256(spnft.revealType()),
+            uint256(SPNFT.RevealType.InCollection)
+        );
+    }
+
     function testOwnershipCorrect() public {
         assertEq(spnft.ownerOf(tokenId1), user1);
         assertEq(spnft.ownerOf(tokenId2), user1);

@@ -5,6 +5,7 @@ out/
 # Foundry files
 forge-cache/
 forge-artifacts/
+broadcast/
 
 # Editor files
 .vscode/

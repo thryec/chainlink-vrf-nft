@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 import "./SPNFTMintedState.t.sol";
-import "./SPNFTWithExposedVRF.sol";
+import "../src/SPNFTWithExposedVRF.sol";
 
 /**
  * @title SPNFTRevealEnabledState

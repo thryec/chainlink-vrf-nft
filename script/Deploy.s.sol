@@ -10,14 +10,13 @@ import "../src/SPNFTStaking.sol";
 contract DeployScript is Script {
     // Sepolia Chainlink VRF Coordinator
     address constant VRF_COORDINATOR =
-        0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625;
+        0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B;
     bytes32 constant KEY_HASH =
-        0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c;
-    uint64 constant SUBSCRIPTION_ID = 1; // Update with your actual subscription ID
+        0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
+    uint64 constant SUBSCRIPTION_ID = 123; // FOR TESTING ONLY, CHANGE BEFORE DEPLOYMENT
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
 
         // Deploy the SP NFT contract
         SPNFT spnft = new SPNFT(

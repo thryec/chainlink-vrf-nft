@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
-import "./SPNFTWithExposedVRF.sol";
+import "../src/SPNFTWithExposedVRF.sol";
 import "../src/RevealedSPNFT.sol";
 import "../src/SPToken.sol";
 import "../src/SPNFTStaking.sol";

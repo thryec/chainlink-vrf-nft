@@ -48,7 +48,7 @@ This project implements a SP NFT (ERC-721) with different metadata revealing app
 - A Chainlink VRF subscription on Sepolia
 
 ## Setup
-
+ 
 1. Clone the repository:
    ```bash
    git clone <repository-url>
@@ -82,7 +82,19 @@ This project implements a SP NFT (ERC-721) with different metadata revealing app
    forge script script/Deploy.s.sol:DeployScript --rpc-url $SEPOLIA_RPC_URL --broadcast --verify
    ```
 
+   Or if you are using an encrypted private key, you can use the following command:
+   ```bash
+   forge script script/Deploy.s.sol:DeployScript --keystore $KEYSTORE_FILE --password $KEYSTORE_PASSWORD --rpc-url $SEPOLIA_RPC_URL --broadcast --verify
+   ```
+
 2. After deployment, add your SPNFT contract address as a consumer in your Chainlink VRF subscription.
+
+### Debugging Deployment
+If you see an error xxx, use this script instead:
+
+```bash
+forge script script/Deploy.s.sol:DeployScript --keystore $KEYSTORE_FILE --password $KEYSTORE_PASSWORD --rpc-url $SEPOLIA_RPC_URL --broadcast --verify --slow
+```
 
 ## Usage
 
@@ -135,3 +147,10 @@ As the contract owner, you can set the reveal type before revealing starts:
 - Efficient storage layouts for staking information
 - Batch reveal capability for operators
 - Minimal storage usage for token tracking
+
+
+## Sepolia Deployment
+  SPNFT deployed at: 0xC887e0183211A1403198F88441E39860330b691c
+  RevealedSPNFT deployed at: 0x723B5391BCA75CE1A9c05df9aB279A03a13c38B5
+  SPToken deployed at: 0x1F81bA7De953085E190Ed19DCb3131DD4CC1c777
+  SPNFTStaking deployed at: 0x09ef2A37F34F87Df39D0C3E314eF6DFAEfBBf969

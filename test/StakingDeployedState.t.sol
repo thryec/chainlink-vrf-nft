@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 import "./StateZero.t.sol";
-import "./VRFMock.sol";
+import "../src/VRFMock.sol";
 
 /**
  * @title StakingDeployedState

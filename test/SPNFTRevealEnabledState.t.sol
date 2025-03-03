@@ -169,15 +169,11 @@ contract SPNFTRevealEnabledTest is SPNFTRevealEnabledState {
 
         // Simulate VRF callback
         _simulateVRFCallback(requestId, 12345);
-        console.log("callback simulated");
 
         // Check token is now revealed
         assertEq(spnft.isRevealed(tokenId1), true);
 
-        console.log("is revealed");
-
         // Verify randomness was set
-        uint256 randomness = spnft.getRandomness(tokenId1);
         assertEq(spnft.getRandomness(tokenId1) != 0, true);
     }
 }

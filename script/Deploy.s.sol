@@ -47,6 +47,7 @@ contract DeployScript is Script {
 
         // Deploy the staking contract
         SPNFTStaking staking = new SPNFTStaking(
+            address(spnft),
             address(revealedSpnft),
             address(spToken)
         );

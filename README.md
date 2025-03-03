@@ -68,6 +68,13 @@ This project implements a SP NFT (ERC-721) with different metadata revealing app
      ETHERSCAN_API_KEY=your_etherscan_api_key
      ```
 
+   - Alternatively, encrypt your private key with `cast` for better security 
+     ```
+     cast wallet import --private-key $PRIVATE_KEY --password $PASSWORD 
+     export KEYSTORE_FILE=./path-to-your-keystore-file
+     export KEYSTORE_PASSWORD=mypassword123
+     ```
+
 4. Configure your Chainlink VRF:
    - Go to [Chainlink VRF Subscription Manager](https://vrf.chain.link/) and create a subscription
    - Fund your subscription with LINK tokens

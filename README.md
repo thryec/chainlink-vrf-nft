@@ -1,13 +1,13 @@
 # SP NFT Project
 
-This project implements a SP NFT (ERC-721) with different metadata revealing approaches. The solution leverages Chainlink for random number generation and allows for two distinct revealing approaches.
+This project implements a SP NFT (ERC-721) with different metadata revealing approaches. The solution leverages Chainlink for random number generation and allows for two distinct revealing approaches, with staking functionality for revealed NFTs.
 
 ## Project Structure
 
-- `SPNFT.sol` - Base SP NFT contract with in-collection revealing support
+- `SPNFT.sol` - Base SP NFT contract with support for both in-collection and separate collection reveals
 - `RevealedSPNFT.sol` - Contract for revealed NFTs in the separate collection approach
 - `SPToken.sol` - ERC20 token for staking rewards
-- `SPNFTStaking.sol` - Contract for staking NFTs to earn rewards
+- `SPNFTStaking.sol` - Contract for staking revealed NFTs from either collection
 
 ## Features
 
@@ -15,21 +15,31 @@ This project implements a SP NFT (ERC-721) with different metadata revealing app
    - In-Collection Revealing: The SP NFT and the revealed SP NFT reside in the same ERC-721 contract
    - Separate Collection Revealing: The SP NFT and the revealed SP NFT are stored in separate ERC-721 contracts
 
-2. **On-Chain Metadata:**
+2. **User-Initiated Revealing:**
+   - End users can request reveals for their own tokens
+   - Operators can perform batch reveals
+   - Only revealed tokens can be staked
+
+3. **On-Chain Metadata:**
    - All metadata are stored on-chain
    - Metadata is generated on the fly within the tokenURI() function
+   - Before reveal, all tokens share the same "mystery box" metadata
+   - After reveal, each token has unique metadata based on Chainlink randomness
 
-3. **Chainlink Integration:**
-   - Uses Chainlink VRF for random number generation
-   - Selects corresponding metadata based on the random number
+4. **Chainlink Integration:**
+   - Uses Chainlink VRF for secure random number generation
+   - Randomness determines token attributes and appearance
+   - Each token gets unique randomness for trait distribution
 
-4. **Purchase and Return:**
+5. **Purchase and Return:**
    - Buy SP NFT with Ether
    - Returns excessive funds if the final mint price is lower than the purchase price
 
-5. **Staking and Claim (Bonus):**
-   - Stake revealed SP NFTs to earn 5% APY in ERC20 tokens
-   - Claim rewards at any time
+6. **Staking and Rewards:**
+   - Stake revealed NFTs from either collection to earn 5% APY in ERC20 tokens
+   - Unified staking interface handles both collections
+   - Claim rewards at any time without unstaking
+   - Unstake to withdraw NFTs and claim rewards
 
 ## Prerequisites
 
@@ -88,17 +98,20 @@ As the contract owner, you can set the reveal type before revealing starts:
 
 ### Requesting Reveal
 
-1. As the operator, enable revealing by calling `setRevealEnabled(true)`
-2. End users can call `requestReveal(tokenId)` to reveal their own tokens
-3. Alternatively, the operator can call `batchRequestReveal([tokenIds])` to reveal multiple tokens at once
-4. Once the Chainlink VRF callback is fulfilled, the tokens will be revealed with randomly assigned metadata
+1. Enable revealing by calling `setRevealEnabled(true)`
+2. As a token owner, call `requestReveal(tokenId)` to reveal your token
+3. As an operator, call `batchRequestReveal([tokenIds])` to reveal multiple tokens
+4. Once the VRF callback is fulfilled, the tokens will be revealed with random attributes
 
 ### Staking NFTs
 
-1. Approve the staking contract to transfer your revealed NFT
-2. Call `stake(tokenId)` on the staking contract
-3. To claim rewards without unstaking, call `claimRewards(tokenId)`
-4. To unstake and claim rewards, call `unstake(tokenId)`
+1. Make sure your NFT is revealed (either in the original or revealed collection)
+2. Approve the staking contract to transfer your NFT
+3. Call `stake(nftType, tokenId)` on the staking contract:
+   - Use `NFTType.Original (0)` for in-collection revealed tokens
+   - Use `NFTType.Revealed (1)` for separate collection tokens
+4. To claim rewards without unstaking, call `claimRewards(nftType, tokenId)`
+5. To unstake and claim rewards, call `unstake(nftType, tokenId)`
 
 ## Contract Addresses (Sepolia)
 
@@ -113,10 +126,12 @@ As the contract owner, you can set the reveal type before revealing starts:
 - ReentrancyGuard is used to prevent reentrancy attacks in critical functions
 - Ownership controls ensure only authorized addresses can perform sensitive operations
 - Input validation ensures data integrity
+- Only revealed tokens can be staked
 
 ## Gas Optimizations
 
-- Batch processing for token reveals
-- Efficient storage usage
-- Limited array operations
-- Use of mapping for O(1) lookups
+- Unified staking interface reduces duplicate code
+- Type-based routing for different NFT collections
+- Efficient storage layouts for staking information
+- Batch reveal capability for operators
+- Minimal storage usage for token tracking

@@ -9,33 +9,40 @@ This document provides a detailed explanation of the SP NFT project architecture
 The SP NFT project consists of the following components:
 
 ```
-                +----------------+
-                |                |
-                |      SPNFT     |
-                |                |
-                +-------+--------+
-                        |
-                        | Reveals to
-                        |
-         +------+-------v---------+------+
-         |                                |
-+--------v----------+        +------------v-------+
-|                   |        |                    |
-| In-Collection     |        | RevealedSPNFT      |
-| (Same Contract)   |        | (Separate Contract)|
-|                   |        |                    |
-+---------+---------+        +------------+-------+
-          |                               |
-          |                               |
-          |            Staking            |
-          |                               |
-          |                               |
-          v                               v
-    +-----+------+                +-----------------+
-    |            |                |                 |
-    | SPNFTStaking+--------------->     SPToken     |
-    |            |   Rewards     |                 |
-    +------------+                +-----------------+
+                              +----------------+
+                              |                |
+                              |      SPNFT     |
+                              |                |
+                              +-------+--------+
+                                      |
+                           Reveals to |
+                                      |
+             +-----------------------++-----------------------+
+             |                                               |
++------------v-----------+                     +-------------v----------+
+|                        |                     |                        |
+| In-Collection Revealed |                     | RevealedSPNFT          |
+| (Same Contract)        |                     | (Separate Contract)    |
+|                        |                     |                        |
++------------+-----------+                     +-------------+----------+
+             |                                               |
+             |                  Staking                      |
+             |                                               |
+             v                                               v
+       +-----+----------------------------------------+------+
+       |                                                     |
+       |                  SPNFTStaking                       |
+       |                                                     |
+       +---------------------------+-------------------------+
+                                   |
+                                   | Rewards
+                                   |
+                                   v
+                          +--------+--------+
+                          |                 |
+                          |    SPToken      |
+                          |                 |
+                          +-----------------+
 ```
 
 ## Contracts
@@ -55,13 +62,16 @@ The SP NFT project consists of the following components:
 - **Revealing Approaches**: Supports both in-collection and separate collection revealing
 - **On-Chain Metadata**: Stores and generates metadata on-chain
 - **Chainlink VRF Integration**: Uses Chainlink for secure randomness to determine NFT traits
+- **Reveal Status Tracking**: Tracks whether a token has been revealed via the `isRevealed` function
 
 **Key Functions**:
 - `mint()`: Allows users to mint NFTs with ETH payment
 - `setRevealType(RevealType)`: Sets the revealing approach (in-collection or separate)
-- `requestReveal()`: Initiates the reveal process by requesting randomness
+- `requestReveal(tokenId)`: Allows end users to initiate the reveal process for a specific token
+- `batchRequestReveal(tokenIds)`: Allows operators to request reveals for multiple tokens
 - `fulfillRandomWords()`: Callback from Chainlink VRF that processes randomness
 - `tokenURI()`: Generates metadata URI on the fly based on token ID and reveal status
+- `isRevealed(tokenId)`: Checks if a token has been revealed
 
 ### 2. RevealedSPNFT.sol
 
@@ -69,7 +79,7 @@ The SP NFT project consists of the following components:
 
 **Integration Points**:
 - Integrated with SPNFT as the target for separate collection reveals
-- Can be integrated with SPNFTStaking for staking functionality
+- Can be staked in the SPNFTStaking contract
 
 **Functionality**:
 - **ERC-721 Implementation**: Standard NFT functionality for revealed NFTs
@@ -100,19 +110,22 @@ The SP NFT project consists of the following components:
 **Role**: Enables users to stake their revealed NFTs and earn rewards.
 
 **Integration Points**:
-- Integrates with RevealedSPNFT to accept NFTs for staking
+- Integrates with both SPNFT (for in-collection revealed NFTs) and RevealedSPNFT (for separate collection revealed NFTs)
 - Integrates with SPToken to distribute rewards
 
 **Functionality**:
-- **Staking Mechanism**: Allows users to lock their NFTs and earn rewards
+- **Unified Staking Mechanism**: Allows users to stake NFTs from either collection
+- **Reveal Verification**: Ensures only revealed tokens can be staked
 - **Reward Calculation**: Implements 5% APY reward calculation
 - **Claiming System**: Allows users to claim rewards without unstaking
 
 **Key Functions**:
-- `stake()`: Stakes an NFT and begins earning rewards
-- `unstake()`: Unstakes an NFT and claims rewards
-- `claimRewards()`: Claims rewards without unstaking
-- `calculateRewards()`: Calculates pending rewards for a staked NFT
+- `stake(NFTType, tokenId)`: Stakes an NFT from either collection and begins earning rewards
+- `unstake(NFTType, tokenId)`: Unstakes an NFT and claims rewards
+- `claimRewards(NFTType, tokenId)`: Claims rewards without unstaking
+- `calculateRewards(NFTType, tokenId)`: Calculates pending rewards for a staked NFT
+- `getAllStakedTokens(owner)`: Returns all tokens staked by an owner across both collections
+- `getTotalPendingRewards(owner)`: Calculates total rewards pending across all staked tokens
 
 ## Technical Design Decisions
 
@@ -129,65 +142,61 @@ The metadata follows OpenSea's metadata standard format, returning a complete JS
 
 ### 2. Revealing Approaches
 
-As specified in the FAQ, the system supports two revealing approaches that must be selected by the operator before the reveal process begins:
+The system supports two revealing approaches:
 
 **In-Collection Revealing**:
-- The SP NFT and the revealed SP NFT reside in the same ERC-721 smart contract
-- When revealed, the SP NFT's metadata is switched to another set, transforming it into the revealed NFT
-- Simpler approach with lower gas costs
-- All token history remains in one contract
+- The SP NFT and the revealed SP NFT reside in the same contract
+- When revealed, the metadata for the token is updated based on randomness
+- Tokens remain in the original collection but with new metadata
+- After revealing, tokens can be staked directly
 
 **Separate Collection Revealing**:
-- The SP NFT and revealed SP NFT are stored in separate ERC-721 smart contracts
-- When revealing, the system burns the SP NFT, mints a new NFT in the revealed SP NFT smart contract, and transfers it to the end user
-- Provides a clear separation between unrevealed and revealed NFTs
-- Allows for different functionality in the revealed collection
+- The SP NFT and revealed SP NFT are in separate contracts
+- When revealing, the original NFT is burned and a new one is minted in the revealed collection
+- Tokens are transferred to a dedicated collection for revealed NFTs
+- Tokens in the revealed collection can be staked without additional checks
 
 Both approaches are designed with reusability in mind, allowing for potential application in other NFT projects.
 
 ### 3. Chainlink VRF Integration
 
-As explained in the FAQ, Chainlink VRF is used during the revealing phase, not during minting. Its main role is to ensure that when an end user chooses to reveal the metadata for their token, the metadata they receive is randomized and unique:
+Chainlink VRF is used during the revealing phase to provide verifiable randomness for determining NFT traits:
 
-- **Security**: Prevents manipulation of NFT rarities
+- **User-Initiated Reveals**: End users can request reveals for their own tokens
+- **Operator Batch Reveals**: Operators can request reveals for multiple tokens
+- **Secure Randomness**: Prevents manipulation of NFT rarities
 - **Verifiability**: Users can verify the randomness was generated fairly
-- **Randomization**: Employed to randomly map metadata to a given token ID when the owner initiates the revealing process
-- **User-Initiated**: End users can initiate the reveal process for their tokens
 
-The system uses the Chainlink VRF v2 implementation for better scalability and cost-efficiency.
+The VRF callback `fulfillRandomWords()` is used to:
+1. Store randomness for each revealed token
+2. Either update metadata (in-collection) or burn and mint tokens (separate collection)
 
 ### 4. Staking Mechanism
 
-The staking mechanism allows users to earn rewards by locking their revealed NFTs:
+The staking mechanism uses a unified approach to handle both types of revealed NFTs:
 
-- **Time-Based Rewards**: Rewards are calculated based on time staked
-- **Dynamic Claiming**: Users can claim rewards any time without unstaking
-- **5% APY**: Rewards are calculated at a fixed 5% annual rate
-- **Gas Optimization**: Uses efficient data structures to minimize gas costs
+- **Type-Based Staking**: Uses an enum to identify which collection a token belongs to
+- **Reveal Verification**: Checks that tokens from the original collection are revealed before staking
+- **Consistent Rewards**: Same APY (5%) for both token types
+- **Flexible Architecture**: Easy to add new token types or modify staking parameters
 
-## Gas Optimization Strategies
+### 5. Gas Optimization
 
-1. **Batch Processing**: Random number requests and reveals are processed in batches
-2. **Efficient Storage**: Using structured data types to minimize storage costs
-3. **Minimal Redundancy**: Avoiding duplicate storage of data
-4. **Optimized Loops**: Using efficient algorithms for array operations
+Several gas optimization techniques are employed:
+
+- **Unified Staking Logic**: Single stake/unstake functions with type parameter
+- **Efficient Storage**: Using structured data types to minimize storage costs
+- **Minimal Redundancy**: Avoiding duplicate storage of data
+- **Optimized Collections**: Using arrays and mappings for efficient token tracking
 
 ## Security Considerations
 
 1. **Access Control**: Only authorized addresses can perform sensitive operations
 2. **Reentrancy Protection**: Using ReentrancyGuard for functions that transfer assets
 3. **Input Validation**: Checking inputs for validity before processing
-4. **Safe Math**: Using SafeMath for arithmetic operations to prevent overflows
-5. **Secure Randomness**: Using Chainlink VRF for unpredictable and verifiable randomness
-
-## Extensibility
-
-The system is designed to be extensible in several ways:
-
-1. **New Revealing Approaches**: The architecture allows adding new revealing approaches
-2. **Metadata Updates**: The metadata can be updated by the contract owner
-3. **Staking Parameters**: The staking parameters can be adjusted
-4. **Integration with Other Contracts**: The contracts can be integrated with other systems
+4. **Secure Randomness**: Using Chainlink VRF for unpredictable and verifiable randomness
+5. **Reveal Verification**: Ensuring only revealed tokens can be staked
+6. **Permission Checks**: Verifying ownership and permissions for all operations
 
 ## Future Considerations
 
@@ -195,49 +204,4 @@ The system is designed to be extensible in several ways:
 2. **Tiered Staking Rewards**: Different reward rates based on NFT rarity
 3. **Governance Mechanisms**: Community governance for important parameters
 4. **Marketplace Integration**: Direct integration with NFT marketplaces
-
-## Implementation Notes
-
-1. All contracts use the latest Solidity version (^0.8.19) to benefit from recent safety features
-2. OpenZeppelin contracts are used for standard functionality like ERC-721, ERC-20, and access control
-3. Chainlink contracts are used for VRF functionality
-4. The code is thoroughly commented to explain complex logic
-5. Gas optimization is applied throughout the codebase
-
-
-
-## Repository Layout  
-
-```
-project-root/
-├── src/
-│   ├── SPNFT.sol                      # Base SP NFT contract with two revealing approaches
-│   ├── RevealedSPNFT.sol              # Separate collection for revealed NFTs
-│   ├── SPToken.sol                    # ERC20 token for staking rewards
-│   └── SPNFTStaking.sol               # Staking contract for NFTs
-│
-├── script/
-│   └── Deploy.s.sol                   # Deployment script for all contracts
-│
-├── test/
-│   ├── helpers/
-│   │   ├── StateZero.sol                       # Base test state
-│   │   ├── SPNFTDeployedState.sol              # SPNFT deployed state
-│   │   ├── SPNFTMintedState.sol                # SPNFT minted state
-│   │   ├── SPNFTRevealEnabledState.sol         # SPNFT reveal enabled state
-│   │   ├── SPNFTInCollectionRevealState.sol    # SPNFT in-collection reveal state
-│   │   ├── SPNFTSeparateCollectionRevealState.sol  # SPNFT separate collection state
-│   │   ├── StakingDeployedState.sol            # Staking deployed state
-│   │   ├── StakingNFTsMintedState.sol          # NFTs minted for staking
-│   │   ├── StakingNFTsStakedState.sol          # NFTs staked state
-│   │   ├── StakingLongTermState.sol            # Long-term staking state
-│   │   └── VRFMock.sol                         # Mock for VRF testing
-│   │
-│   ├── SPNFT.t.sol                            # Main SPNFT test file
-│   └── SPNFTStaking.t.sol                     # Main staking test file
-│
-├── foundry.toml                      # Foundry configuration
-├── README.md                         # Project documentation
-├── deploy.sh                         # Deployment script
-└── .gitignore                        # Git ignore file
-```
+5. **Additional Reveal Approaches**: Support for new revealing methodologies

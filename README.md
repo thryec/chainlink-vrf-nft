@@ -96,12 +96,6 @@ This project implements a SP NFT (ERC-721) with different metadata revealing app
 
 2. After deployment, add your SPNFT contract address as a consumer in your Chainlink VRF subscription.
 
-### Debugging Deployment
-If you see an error xxx, use this script instead:
-
-```bash
-forge script script/Deploy.s.sol:DeployScript --keystore $KEYSTORE_FILE --password $KEYSTORE_PASSWORD --rpc-url $SEPOLIA_RPC_URL --broadcast --verify --slow
-```
 
 ## Usage
 

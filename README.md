@@ -91,8 +91,10 @@ This project implements a SP NFT (ERC-721) with different metadata revealing app
 
    Or if you are using an encrypted private key, you can use the following command:
    ```bash
-   forge script script/Deploy.s.sol:DeployScript --keystore $KEYSTORE_FILE --password $KEYSTORE_PASSWORD --rpc-url $SEPOLIA_RPC_URL --broadcast --verify
+   forge script script/Deploy.s.sol:DeployScript --keystore $KEYSTORE_FILE --password $KEYSTORE_PASSWORD --rpc-url $SEPOLIA_RPC_URL --etherscan-api-key $ETHERSCAN_API_KEY --broadcast --verify
    ```
+
+   You may need to add the `--slow` flag if you encouter issues relating to: `error code -32000: future transaction tries to replace pending`
 
 2. After deployment, add your SPNFT contract address as a consumer in your Chainlink VRF subscription.
 
@@ -109,7 +111,7 @@ As the contract owner, you can set the reveal type before revealing starts:
 1. Call `setRevealType(0)` for in-collection revealing
 2. Call `setRevealType(1)` for separate collection revealing (make sure you've set the revealed collection address)
 
-### Requesting Reveal
+### Requesting Reveal--etherscan-api-key
 
 1. Enable revealing by calling `setRevealEnabled(true)`
 2. As a token owner, call `requestReveal(tokenId)` to reveal your token
@@ -128,10 +130,10 @@ As the contract owner, you can set the reveal type before revealing starts:
 
 ## Contract Addresses (Sepolia)
 
-- SPNFT: [contract_address]
-- RevealedSPNFT: [contract_address]
-- SPToken: [contract_address]
-- SPNFTStaking: [contract_address]
+- SPNFT: [0x226ACa89C6e3b9306360c16FdE9424C1799e258E]
+- RevealedSPNFT: [0x3eAee6894f22BDcE537d9D005dc4AF88345bdeC0]
+- SPToken: [0x2cb7B08c6522Cc663098E44262Ab44e1C786bD22]
+- SPNFTStaking: [0x1AFEf64402599f0A84bd71a87fa225A85D4b99B2]
 
 ## Security Considerations
 
@@ -148,10 +150,3 @@ As the contract owner, you can set the reveal type before revealing starts:
 - Efficient storage layouts for staking information
 - Batch reveal capability for operators
 - Minimal storage usage for token tracking
-
-
-## Sepolia Deployment
-  SPNFT deployed at: 0xC887e0183211A1403198F88441E39860330b691c
-  RevealedSPNFT deployed at: 0x723B5391BCA75CE1A9c05df9aB279A03a13c38B5
-  SPToken deployed at: 0x1F81bA7De953085E190Ed19DCb3131DD4CC1c777
-  SPNFTStaking deployed at: 0x09ef2A37F34F87Df39D0C3E314eF6DFAEfBBf969

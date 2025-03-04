@@ -13,7 +13,7 @@ contract DeployScript is Script {
         0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B;
     bytes32 constant KEY_HASH =
         0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
-    uint64 constant SUBSCRIPTION_ID = 123; // FOR TESTING ONLY, CHANGE BEFORE DEPLOYMENT
+    uint64 constant SUBSCRIPTION_ID = 12295;
 
     function run() external {
         vm.startBroadcast();

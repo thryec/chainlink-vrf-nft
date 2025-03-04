@@ -22,7 +22,6 @@ broadcast/
 
 # Dependency directories
 node_modules/
-lib/
 
 # Debug logs
 npm-debug.log*

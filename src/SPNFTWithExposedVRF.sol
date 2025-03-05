@@ -1,4 +1,6 @@
-// In your test folder, create SPNFTTest.sol
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.23;
+
 import "../src/SPNFT.sol";
 
 contract SPNFTWithExposedVRF is SPNFT {

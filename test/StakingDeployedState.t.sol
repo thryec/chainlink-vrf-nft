@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity >=0.8.23;
 
 import "./StateZero.t.sol";
 import "../src/VRFMock.sol";

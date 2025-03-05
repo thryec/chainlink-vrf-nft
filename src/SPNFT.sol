@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity >=0.8.23;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@chainlink/contracts/v0.8/vrf/VRFConsumerBaseV2.sol";
 import "@chainlink/contracts/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import "forge-std/console.sol";
@@ -13,7 +14,12 @@ import "forge-std/console.sol";
  * @title SPNFT
  * @dev ERC721 token with on-chain metadata and different revealing approaches
  */
-contract SPNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
+contract SPNFT is
+    ERC721Enumerable,
+    Ownable,
+    ReentrancyGuard,
+    VRFConsumerBaseV2
+{
     using Strings for uint256;
 
     // Chainlink VRF variables
@@ -107,9 +113,11 @@ contract SPNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
 
         // Return excess payment if any
         if (msg.value > mintPrice) {
-            payable(msg.sender).transfer(msg.value - mintPrice);
+            (bool success, ) = msg.sender.call{value: msg.value - mintPrice}(
+                ""
+            );
+            require(success, "Refund failed");
         }
-
         emit NFTMinted(msg.sender, tokenId);
         return tokenId;
     }
@@ -137,6 +145,10 @@ contract SPNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
     function setRevealedCollectionAddress(
         address _revealedCollectionAddress
     ) external onlyOwner {
+        require(
+            _revealedCollectionAddress != address(0),
+            "Invalid Revealed SPNFT address"
+        );
         revealedCollectionAddress = _revealedCollectionAddress;
         emit RevealedCollectionSet(_revealedCollectionAddress);
     }
@@ -145,13 +157,15 @@ contract SPNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
      * @dev Function for an end user to request the reveal of their token
      * @param tokenId The ID of the token to reveal
      */
-    function requestReveal(uint256 tokenId) external {
+    // slither-disable-next-line reentrancy-eth,reentrancy-events,reentrancy-no-eth
+    function requestReveal(uint256 tokenId) external nonReentrant {
         require(revealEnabled, "Revealing is not enabled");
         require(_ownerOf(tokenId) != address(0), "Token does not exist");
         require(ownerOf(tokenId) == msg.sender, "Not the owner of this token");
         require(tokenIdToRandomness[tokenId] == 0, "Token already revealed");
 
         // Create an array with just this token ID
+
         uint256[] memory tokenIdsToReveal = new uint256[](1);
         tokenIdsToReveal[0] = tokenId;
 
@@ -163,7 +177,6 @@ contract SPNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
             CALLBACK_GAS_LIMIT,
             NUM_WORDS
         );
-        console.log("reveal requestId:", requestId);
 
         requestIdToTokenIds[requestId] = tokenIdsToReveal;
         revealed++;
@@ -175,9 +188,10 @@ contract SPNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
      * @dev Function for the operator to request reveal of multiple tokens (for batch processing)
      * @param tokenIds Array of token IDs to reveal
      */
+    // slither-disable-next-line reentrancy-eth,reentrancy-events,reentrancy-no-eth
     function batchRequestReveal(
         uint256[] calldata tokenIds
-    ) external onlyOwner {
+    ) external onlyOwner nonReentrant {
         require(revealEnabled, "Revealing is not enabled");
 
         for (uint256 i = 0; i < tokenIds.length; i++) {
@@ -471,7 +485,8 @@ contract SPNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
     function withdraw() external onlyOwner {
         uint256 balance = address(this).balance;
         require(balance > 0, "No balance to withdraw");
-        payable(owner()).transfer(balance);
+        (bool success, ) = owner().call{value: balance}("");
+        require(success, "Transfer to owner failed");
     }
 }
 

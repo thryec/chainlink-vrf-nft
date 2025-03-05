@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity >=0.8.23;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -30,6 +30,7 @@ contract SPToken is ERC20, Ownable {
      * @param _stakingContract The address of the staking contract
      */
     function setStakingContract(address _stakingContract) external onlyOwner {
+        require(_stakingContract != address(0), "Invalid staking address");
         stakingContract = _stakingContract;
         emit StakingContractSet(_stakingContract);
     }

@@ -150,3 +150,13 @@ As the contract owner, you can set the reveal type before revealing starts:
 - Efficient storage layouts for staking information
 - Batch reveal capability for operators
 - Minimal storage usage for token tracking
+
+## Test Coverage 
+
+To generate a test coverage, run `forge coverage --report lcov`. 
+
+For detailed test coverage reports, see the `coverage` directory. 
+
+Here is a quick summary for this repository for reference: 
+
+![Coverage](coverage/forge-coverage.png) 

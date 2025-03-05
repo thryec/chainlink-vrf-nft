@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity >=0.8.23;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
@@ -32,7 +32,7 @@ contract SPNFTStaking is ERC721Holder, ReentrancyGuard, Ownable {
     ISPToken public rewardToken;
 
     // SPNFT contract to access the isRevealed function
-    SPNFTWithExposedVRF spnftContract;
+    SPNFTWithExposedVRF immutable spnftContract;
 
     // Enum to identify which NFT collection a token belongs to
     enum NFTType {
@@ -123,9 +123,6 @@ contract SPNFTStaking is ERC721Holder, ReentrancyGuard, Ownable {
 
         // For revealed collection, the token is already revealed by definition
 
-        // Transfer NFT to contract
-        nftContract.safeTransferFrom(msg.sender, address(this), tokenId);
-
         // Create stake
         stakes[nftType][tokenId] = Stake({
             owner: msg.sender,
@@ -141,6 +138,9 @@ contract SPNFTStaking is ERC721Holder, ReentrancyGuard, Ownable {
         } else {
             stakedRevealedTokens[msg.sender].push(tokenId);
         }
+
+        // Transfer NFT to contract
+        nftContract.safeTransferFrom(msg.sender, address(this), tokenId);
 
         emit NFTStaked(msg.sender, tokenId, nftType, block.timestamp);
     }
@@ -180,25 +180,10 @@ contract SPNFTStaking is ERC721Holder, ReentrancyGuard, Ownable {
         // Calculate rewards
         uint256 rewards = calculateRewards(nftType, tokenId);
 
-        // Mint rewards if any
-        if (rewards > 0) {
-            rewardToken.mint(msg.sender, rewards);
-            emit RewardsClaimed(
-                msg.sender,
-                tokenId,
-                nftType,
-                rewards,
-                block.timestamp
-            );
-        }
-
         // Determine which NFT contract to use
         IERC721 nftContract = nftType == NFTType.Original
             ? originalSPNFT
             : revealedSPNFT;
-
-        // Transfer the NFT back to the owner
-        nftContract.safeTransferFrom(address(this), msg.sender, tokenId);
 
         // Remove token from staked tokens list
         if (nftType == NFTType.Original) {
@@ -217,6 +202,21 @@ contract SPNFTStaking is ERC721Holder, ReentrancyGuard, Ownable {
 
         // Delete stake
         delete stakes[nftType][tokenId];
+
+        // Mint rewards if any
+        if (rewards > 0) {
+            rewardToken.mint(msg.sender, rewards);
+            emit RewardsClaimed(
+                msg.sender,
+                tokenId,
+                nftType,
+                rewards,
+                block.timestamp
+            );
+        }
+
+        // Transfer the NFT back to the owner
+        nftContract.safeTransferFrom(address(this), msg.sender, tokenId);
 
         emit NFTUnstaked(msg.sender, tokenId, nftType, block.timestamp);
     }

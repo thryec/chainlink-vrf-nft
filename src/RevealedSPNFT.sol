@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity >=0.8.23;
 
 // import "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -50,6 +50,7 @@ contract RevealedSPNFT is ERC721Enumerable, Ownable {
      * @param _spnftContract The address of the SP NFT contract
      */
     function setSPNFTContract(address _spnftContract) external onlyOwner {
+        require(_spnftContract != address(0), "Invalid SPNFT address");
         spnftContract = _spnftContract;
     }
 

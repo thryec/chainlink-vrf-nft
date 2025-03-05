@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity >=0.8.23;
 
 import "./SPNFTMintedState.t.sol";
 import "../src/SPNFTWithExposedVRF.sol";

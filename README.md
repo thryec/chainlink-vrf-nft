@@ -159,4 +159,4 @@ For detailed test coverage reports, see the `coverage` directory.
 
 Here is a quick summary for this repository for reference: 
 
-![Coverage](coverage/forge-coverage.png) 
+![Coverage](forge-coverage.png) 

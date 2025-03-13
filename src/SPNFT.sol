@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@chainlink/contracts/v0.8/vrf/VRFConsumerBaseV2.sol";
 import "@chainlink/contracts/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
-import "forge-std/console.sol";
 
 /**
  * @title SPNFT
@@ -244,11 +243,6 @@ contract SPNFT is
                 keccak256(abi.encode(randomness, tokenId))
             );
             tokenIdToRandomness[tokenId] = tokenRandomness;
-            console.log(
-                "setting tokenIdToRandomness",
-                tokenId,
-                tokenIdToRandomness[tokenId]
-            );
 
             // If using separate collection approach, burn the token and mint a new one
             if (

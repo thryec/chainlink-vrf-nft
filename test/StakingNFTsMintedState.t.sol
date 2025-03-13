@@ -109,23 +109,6 @@ abstract contract StakingNFTsMintedState is StakingDeployedState {
         revealedTokenId1 = tokenToReveal1;
         revealedTokenId2 = tokenToReveal2;
 
-        console.log(
-            "User1 original collection balance:",
-            spnftWithVRF.balanceOf(user1)
-        );
-        console.log(
-            "User1 revealed collection balance:",
-            revealedSpnft.balanceOf(user1)
-        );
-        console.log(
-            "User2 original collection balance:",
-            spnftWithVRF.balanceOf(user2)
-        );
-        console.log(
-            "User2 revealed collection balance:",
-            revealedSpnft.balanceOf(user2)
-        );
-
         // Verify that the revealed tokens exist in the revealed collection
         assertTrue(
             revealedSpnft.ownerOf(revealedTokenId1) == user1,

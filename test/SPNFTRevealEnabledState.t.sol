@@ -51,7 +51,6 @@ abstract contract SPNFTRevealEnabledState is SPNFTMintedState {
         uint256 requestId,
         uint256 randomness
     ) internal {
-        console.log("simulating VRF callback");
         uint256[] memory randomWords = new uint256[](1);
         randomWords[0] = randomness;
 

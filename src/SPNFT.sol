@@ -30,8 +30,8 @@ contract SPNFT is
     uint32 private constant NUM_WORDS = 1;
 
     // NFT variables
-    uint256 private mintPrice;
-    uint256 private maxSupply;
+    uint256 public mintPrice;
+    uint256 public maxSupply;
     uint256 private revealed;
     uint256 private revealBatchSize;
     bool public mintEnabled;
